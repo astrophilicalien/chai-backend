@@ -6,22 +6,25 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 const generateAccessAndRefreshTokens = async(userId) => {
-
     try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
-        const user = await User.findById(userId)
-        const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
 
-        user.refreshToken = refreshToken
-        await user.save({ validateBeforeSave : false })
+        return { accessToken, refreshToken };
 
-        return {accessToken, refreshToken}
-        
     } catch (error) {
-        throw new ApiError(500, "Something went wrong while creating access and refresh tokens")
+        console.error('Error generating tokens:', error);  // Log the detailed error
+        throw new ApiError(500, "Something went wrong while creating access and refresh tokens");
     }
 }
+
 
 
 const registerUser = asyncHandler( async (req, res) => {
@@ -117,6 +120,8 @@ const loginUser = asyncHandler( async (req, res) => {
     if(!isPasswordValid){
         throw new ApiError(401, "password incorrect, invalid user credentials")
     }
+    
+    console.log(user)
 
     // creating a method for creating access and refresh token
     const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
