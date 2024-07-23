@@ -57,9 +57,18 @@ userSchema.pre("save", async function (next) {
     next();
 })
 
-userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
-}
+userSchema.methods.isPasswordCorrect = async function (enteredPassword) {
+    // Log the entered password and the stored hash
+    console.log('Entered Password:', enteredPassword);
+    console.log('Stored Hash:', this.password);
+
+    // Ensure both arguments are provided
+    if (!enteredPassword || !this.password) {
+        throw new Error('Missing password or hash');
+    }
+
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 userSchema.methods.generateAccessToken = function() {
     return jwt.sign(
